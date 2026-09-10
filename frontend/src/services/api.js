@@ -75,6 +75,7 @@ export const analyticsAPI = {
 
 // AI
 export const aiAPI = {
+  query: (text) => api.post('/ai/query', { text }),
   suggest: (text) => api.post('/ai/suggest', { text })
 };
 
