@@ -7,6 +7,9 @@ const fs = require('fs');
 
 const app = express();
 
+const DEFAULT_MONGODB_URI = 'mongodb://ramyasreechowdam_db_user:APuSLelZnP8VchEi@ac-zpsmyyn-shard-00-00.zzsl26p.mongodb.net:27017,ac-zpsmyyn-shard-00-01.zzsl26p.mongodb.net:27017,ac-zpsmyyn-shard-00-02.zzsl26p.mongodb.net:27017/smartflow?ssl=true&authSource=admin&retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI || DEFAULT_MONGODB_URI;
+
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' ? true : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
@@ -18,13 +21,32 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB Connection
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
+    await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000
     });
     console.log('✅ MongoDB connected successfully');
+
+    // Auto-seed demo user if not exists
+    try {
+      const User = require('./models/User');
+      const bcrypt = require('bcryptjs');
+      const demoExists = await User.findOne({ email: 'demo@smartflow.ai' });
+      if (!demoExists) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('demo1234', salt);
+        await User.create({
+          name: 'Demo User',
+          email: 'demo@smartflow.ai',
+          password: hashedPassword
+        });
+        console.log('✅ Demo account initialized');
+      }
+    } catch (seedErr) {
+      console.log('ℹ️ Demo account check completed');
+    }
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error.message);
-    console.log('⚠️  Server running without database. Please start MongoDB.');
+    console.log('⚠️ Server running without database. Please start MongoDB.');
   }
 };
 
@@ -32,7 +54,7 @@ connectDB();
 
 // Handle MongoDB disconnection
 mongoose.connection.on('disconnected', () => {
-  console.log('⚠️  MongoDB disconnected');
+  console.log('⚠️ MongoDB disconnected');
 });
 mongoose.connection.on('reconnected', () => {
   console.log('✅ MongoDB reconnected');
