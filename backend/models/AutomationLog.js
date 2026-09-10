@@ -2,8 +2,7 @@ const mongoose = require('mongoose');
 
 const automationLogSchema = new mongoose.Schema({
   automationId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Automation',
+    type: mongoose.Schema.Types.Mixed,
     required: true
   },
   automationName: {
@@ -27,13 +26,16 @@ const automationLogSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  durationMs: {
+    type: Number,
+    default: 0
+  },
   executedAt: {
     type: Date,
     default: Date.now
   },
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: mongoose.Schema.Types.Mixed,
     required: true
   }
 }, {

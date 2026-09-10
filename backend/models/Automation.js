@@ -9,17 +9,17 @@ const automationSchema = new mongoose.Schema({
   trigger: {
     type: String,
     required: [true, 'Trigger is required'],
-    enum: ['Schedule', 'New Task', 'File Added', 'Manual Trigger', 'Low Inventory']
+    default: 'Manual Trigger'
   },
   action: {
     type: String,
     required: [true, 'Action is required'],
-    enum: ['Send Notification', 'Create Task', 'Update Record', 'Generate Report', 'Send Email', 'Send Restock Request']
+    default: 'Send Notification'
   },
   frequency: {
     type: String,
     required: [true, 'Frequency is required'],
-    enum: ['Once', 'Daily', 'Weekly']
+    default: 'Daily'
   },
   status: {
     type: String,
@@ -39,8 +39,7 @@ const automationSchema = new mongoose.Schema({
     default: ''
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: mongoose.Schema.Types.Mixed,
     required: true
   },
   runCount: {
@@ -67,6 +66,9 @@ const automationSchema = new mongoose.Schema({
 automationSchema.methods.calculateNextRun = function() {
   const now = new Date();
   if (this.frequency === 'Once') return null;
+  if (this.frequency === 'Hourly') {
+    return new Date(now.getTime() + 60 * 60 * 1000);
+  }
   if (this.frequency === 'Daily') {
     const next = new Date(now);
     next.setDate(next.getDate() + 1);
