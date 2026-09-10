@@ -2,12 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  origin: process.env.NODE_ENV === 'production' ? true : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
   credentials: true
 }));
 app.use(express.json());
@@ -36,7 +38,7 @@ mongoose.connection.on('reconnected', () => {
   console.log('✅ MongoDB reconnected');
 });
 
-// Routes
+// API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/automations', require('./routes/automations'));
 app.use('/api/activity', require('./routes/activity'));
@@ -54,7 +56,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 404 handler
+// Serve static frontend in production if dist folder exists
+const distPath = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
+// 404 handler for API routes
 app.use('*', (req, res) => {
   res.status(404).json({ success: false, message: 'API endpoint not found.' });
 });
